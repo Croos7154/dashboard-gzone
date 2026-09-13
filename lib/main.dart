@@ -91,7 +91,7 @@ class _MainLayoutState extends State<MainLayout> {
 // =====================================================================
 
 // =====================================================================
-// NAVEGACIÓN Y ESTRUCTURA DEL LOBBY
+// NAVEGACIÓN Y ESTRUCTURA DEL LOBBY (AHORA RESPONSIVO)
 // =====================================================================
 
 class _LobbyView extends StatelessWidget {
@@ -101,60 +101,71 @@ class _LobbyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. DETECTOR DE PANTALLA
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 600;
+
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+        // Menos padding vertical en móviles para aprovechar el espacio
+        padding: EdgeInsets.symmetric(
+          vertical: isMobile ? 30 : 60,
+          horizontal: 20,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // --- LOGO CENTRAL ---
+            // --- LOGO CENTRAL DINÁMICO ---
             Container(
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
                     color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                    blurRadius: 50,
-                    spreadRadius: 10,
+                    blurRadius: isMobile ? 30 : 50,
+                    spreadRadius: isMobile ? 5 : 10,
                   ),
                 ],
                 shape: BoxShape.circle,
               ),
               child: Image.asset(
                 'assets/logo.png',
-                height: 180, // Logo grande y centrado
+                height: isMobile ? 120 : 180, // Se hace más pequeño en celular
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
+                  return Icon(
                     Icons.shield,
                     color: Colors.orangeAccent,
-                    size: 150,
+                    size: isMobile ? 100 : 150,
                   );
                 },
               ),
             ),
-            const SizedBox(height: 40),
-            const Text(
+            const SizedBox(height: 30),
+
+            // --- TÍTULO DINÁMICO ---
+            Text(
               'BIENVENIDO A G-ZONE',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 42,
+                fontSize: isMobile ? 26 : 42, // Reduce el tamaño en móvil
                 fontWeight: FontWeight.bold,
-                letterSpacing: 4,
+                letterSpacing: isMobile ? 2 : 4,
               ),
             ),
             const SizedBox(height: 10),
             Text(
               'Selecciona tu destino',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: isMobile ? 16 : 18,
                 color: Colors.tealAccent.withValues(alpha: 0.8),
               ),
             ),
-            const SizedBox(height: 60),
+            SizedBox(height: isMobile ? 40 : 60),
 
-            // --- BOTONES DEL LOBBY EN GRID ---
+            // --- BOTONES DEL LOBBY EN GRID/COLUMNA ---
             Wrap(
-              spacing: 30,
-              runSpacing: 30,
+              spacing: isMobile ? 20 : 30,
+              runSpacing: isMobile ? 20 : 30,
               alignment: WrapAlignment.center,
               children: [
                 _buildLobbyCard(
@@ -277,7 +288,6 @@ class _LobbyView extends StatelessWidget {
     );
   }
 
-  // La función ahora está correctamente FUERA del método build, pero DENTRO de la clase _LobbyView
   Widget _buildLobbyCard(
     String title,
     String subtitle,
@@ -296,7 +306,7 @@ class _LobbyView extends StatelessWidget {
 }
 
 // =====================================================================
-// WIDGET INTERACTIVO: TARJETAS CON ANIMACIÓN HOVER NEÓN
+// WIDGET INTERACTIVO: TARJETAS CON ANIMACIÓN HOVER NEÓN (RESPONSIVAS)
 // =====================================================================
 class _HoverableLobbyCard extends StatefulWidget {
   final String title;
@@ -322,6 +332,13 @@ class _HoverableLobbyCardState extends State<_HoverableLobbyCard> {
 
   @override
   Widget build(BuildContext context) {
+    // 2. TAMAÑO DE TARJETAS INTELIGENTE
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = screenWidth < 600;
+
+    // Si es móvil, la tarjeta ocupa el 85% de la pantalla. Si es PC, se queda en 250px fijos.
+    final double cardWidth = isMobile ? screenWidth * 0.85 : 250;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -331,13 +348,13 @@ class _HoverableLobbyCardState extends State<_HoverableLobbyCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          width: 250,
+          width: cardWidth, // Aplicamos el ancho inteligente aquí
           height: 160,
           padding: const EdgeInsets.all(20),
           transform: Matrix4.diagonal3Values(
-            _isHovered ? 1.05 : 1.0, // Escala en X (Ancho)
-            _isHovered ? 1.05 : 1.0, // Escala en Y (Alto)
-            1.0, // Escala en Z (Profundidad)
+            _isHovered ? 1.05 : 1.0,
+            _isHovered ? 1.05 : 1.0,
+            1.0,
           ),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
@@ -417,7 +434,7 @@ class _ContentView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onBack,
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                label: const Text('Volver al Lobby'),
+                label: const Text('Lobby'), // Texto más corto para móvil
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent.withValues(
                     alpha: 0.8,
@@ -428,13 +445,18 @@ class _ContentView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 30),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.tealAccent,
+              const SizedBox(width: 20),
+              // Usamos Expanded para evitar overflows en móviles con títulos largos
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.tealAccent,
+                  ),
+                  overflow:
+                      TextOverflow.ellipsis, // Añade "..." si el texto no cabe
                 ),
               ),
             ],
@@ -515,7 +537,7 @@ class _AnimatedGradientBackgroundState
 }
 
 // =====================================================================
-// WIDGETS DE VISTAS ESPECIALIZADAS (CÓDICE, LEGADO, ETC.)
+// WIDGETS DE VISTAS ESPECIALIZADAS (CÓDICE, LEGADO, ETC.) - RESPONSIVAS
 // =====================================================================
 
 /// Vista para el Propósito del Club (El Lore y el Legado)
@@ -524,8 +546,10 @@ class _PropuestaValorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isMobile ? 20 : 40),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1050),
@@ -549,10 +573,10 @@ class _PropuestaValorView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'El Legado G-Zone: Resurgiendo de las Cenizas',
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: isMobile ? 28 : 36, // Texto más pequeño en móvil
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -560,8 +584,8 @@ class _PropuestaValorView extends StatelessWidget {
               ),
               const SizedBox(height: 30),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 20 : 40,
                   vertical: 25,
                 ),
                 decoration: BoxDecoration(
@@ -581,7 +605,7 @@ class _PropuestaValorView extends StatelessWidget {
                 child: Text(
                   'Hace 4 años, el club nació del sueño de unos amigos por compartir su pasión. Sin embargo, toda gran historia tiene su prueba de fuego. Tras una traición motivada por la ambición que dejó al club sin fondos y con el corazón roto, parecía el fin. Pero nos negamos a caer. El antiguo presidente tomó el manto, unió a los verdaderos fieles y resurgimos de nuestras cenizas.\n\nHoy, esa antorcha está en nuestras manos. Asumimos esta responsabilidad para honrar ese ideal puro: jugar, compartir y resistir. Somos el refugio definitivo de la universidad y no fallaremos a los que confiaron en nosotros.',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isMobile ? 16 : 18,
                     color: Colors.grey[300],
                     height: 1.6,
                     fontStyle: FontStyle.italic,
@@ -589,40 +613,68 @@ class _PropuestaValorView extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 60),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _buildPillarCard(
-                        'Main Quest\n(Nuestra Misión)',
-                        'Proteger el refugio. Mantener vivo este espacio de convivencia donde los videojuegos, el anime y los juegos de mesa sean la excusa perfecta para forjar amistades inquebrantables, sin importar los obstáculos académicos.',
-                        Icons.shield,
-                        Colors.deepPurpleAccent,
+              const SizedBox(height: 40),
+
+              // --- LOS TRES PILARES (RESPONSIVOS) ---
+              // Si es móvil, apilamos hacia abajo. Si es PC, van en fila.
+              isMobile
+                  ? Column(
+                      children: [
+                        _buildPillarCard(
+                          'Main Quest\n(Nuestra Misión)',
+                          'Proteger el refugio. Mantener vivo este espacio de convivencia...',
+                          Icons.shield,
+                          Colors.deepPurpleAccent,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildPillarCard(
+                          'Endgame\n(Nuestra Visión)',
+                          'Pasar la Antorcha. Garantizar que G-Zone sobreviva a cada generación...',
+                          Icons.sports_esports,
+                          Colors.tealAccent,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildPillarCard(
+                          'Atributos Base\n(Nuestros Valores)',
+                          '• Resiliencia y Resistencia\n• Lealtad a la Tribu\n• Pasión Inquebrantable\n• Responsabilidad del Manto\n• Diversión Absoluta',
+                          Icons.military_tech,
+                          Colors.orangeAccent,
+                        ),
+                      ],
+                    )
+                  : IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _buildPillarCard(
+                              'Main Quest\n(Nuestra Misión)',
+                              'Proteger el refugio. Mantener vivo este espacio de convivencia donde los videojuegos, el anime y los juegos de mesa sean la excusa perfecta para forjar amistades inquebrantables, sin importar los obstáculos académicos.',
+                              Icons.shield,
+                              Colors.deepPurpleAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: _buildPillarCard(
+                              'Endgame\n(Nuestra Visión)',
+                              'Pasar la Antorcha. Garantizar que G-Zone sobreviva a cada generación. Mantendremos vivo este legado hasta encontrar a quienes compartan la misma pasión y responsabilidad para heredar el manto del club.',
+                              Icons.sports_esports,
+                              Colors.tealAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: _buildPillarCard(
+                              'Atributos Base\n(Nuestros Valores)',
+                              '• Resiliencia y Resistencia\n• Lealtad a la Tribu\n• Pasión Inquebrantable\n• Responsabilidad del Manto\n• Diversión Absoluta',
+                              Icons.military_tech,
+                              Colors.orangeAccent,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: _buildPillarCard(
-                        'Endgame\n(Nuestra Visión)',
-                        'Pasar la Antorcha. Garantizar que G-Zone sobreviva a cada generación. Mantendremos vivo este legado hasta encontrar a quienes compartan la misma pasión y responsabilidad para heredar el manto del club.',
-                        Icons.sports_esports,
-                        Colors.tealAccent,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: _buildPillarCard(
-                        'Atributos Base\n(Nuestros Valores)',
-                        '• Resiliencia y Resistencia\n• Lealtad a la Tribu\n• Pasión Inquebrantable\n• Responsabilidad del Manto\n• Diversión Absoluta',
-                        Icons.military_tech,
-                        Colors.orangeAccent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 50),
             ],
           ),
@@ -668,16 +720,15 @@ class _PropuestaValorView extends StatelessWidget {
           const SizedBox(height: 20),
           const Divider(color: Colors.white24),
           const SizedBox(height: 20),
-          Expanded(
-            child: Text(
-              description,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[400],
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
+          // Quitamos el Expanded de aquí para que no rompa el scroll en móviles
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[400],
+              height: 1.5,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -691,8 +742,10 @@ class _GuiaBienvenidaView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isMobile ? 20 : 40),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 900),
@@ -711,7 +764,7 @@ class _GuiaBienvenidaView extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(50),
+          padding: EdgeInsets.all(isMobile ? 25 : 50),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -723,21 +776,21 @@ class _GuiaBienvenidaView extends StatelessWidget {
                       color: Colors.deepPurpleAccent.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.local_fire_department,
-                      size: 40,
+                      size: isMobile ? 30 : 40,
                       color: Colors.orangeAccent,
                     ),
                   ),
                   const SizedBox(width: 20),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'El Códice G-Zone',
                           style: TextStyle(
-                            fontSize: 34,
+                            fontSize: isMobile ? 24 : 34,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -745,7 +798,7 @@ class _GuiaBienvenidaView extends StatelessWidget {
                         Text(
                           '4 años haciendo historia en la universidad',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: isMobile ? 14 : 16,
                             color: Colors.tealAccent,
                             fontStyle: FontStyle.italic,
                           ),
@@ -761,90 +814,147 @@ class _GuiaBienvenidaView extends StatelessWidget {
               Text(
                 'A lo largo de cuatro generaciones, el Club G-Zone se ha consolidado como el epicentro de la cultura geek universitaria. Más que un grupo, somos una comunidad de veteranos y nuevos talentos unidos por los videojuegos, la tecnología, el anime y los juegos de tablero. Aquí encontrarás tu escuadrón, intercambiarás XP y descubrirás nuevos mundos. ¡Que inicie la partida!',
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: isMobile ? 15 : 17,
                   color: Colors.grey[350],
                   height: 1.6,
                 ),
               ),
               const SizedBox(height: 40),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _buildPanelBase(
-                      'Fase Presencial (Aulas)',
-                      Icons.map,
-                      Column(
-                        children: [
-                          _buildHorarioTile(
-                            'Lunes',
-                            '3:00 PM – 5:00 PM',
-                            'Salón 15C',
-                            Colors.blueAccent,
+
+              // --- PANELES LOGÍSTICOS RESPONSIVOS ---
+              isMobile
+                  ? Column(
+                      children: [
+                        _buildPanelBase(
+                          'Fase Presencial (Aulas)',
+                          Icons.map,
+                          Column(
+                            children: [
+                              _buildHorarioTile(
+                                'Lunes',
+                                '3:00 PM – 5:00 PM',
+                                'Salón 15C',
+                                Colors.blueAccent,
+                              ),
+                              const SizedBox(height: 10),
+                              _buildHorarioTile(
+                                'Viernes',
+                                '1:00 PM – 3:00 PM',
+                                'Salón 3C',
+                                Colors.redAccent,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          _buildHorarioTile(
-                            'Viernes',
-                            '1:00 PM – 3:00 PM',
-                            'Salón 3C',
-                            Colors.redAccent,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildPanelBase(
+                          'Red de Enlaces Oficiales',
+                          Icons.link,
+                          Column(
+                            children: [
+                              _buildLinkButton(
+                                context,
+                                'Servidor de Discord',
+                                Icons.discord,
+                                const Color(0xFF5865F2),
+                                url: 'https://discord.gg/DQVa6daUAU',
+                              ),
+                              _buildLinkButton(
+                                context,
+                                'Registro Oficial del Club',
+                                Icons.how_to_reg,
+                                Colors.teal,
+                                url: 'https://forms.gle/c4ZRWLt6Tnc3s53z8',
+                              ),
+                              _buildLinkButton(
+                                context,
+                                'Préstamo de Inventario',
+                                Icons.inventory,
+                                Colors.orange,
+                                url: 'https://docs.google.com/forms/d/e/1FAIpQLSeZovKraLqwgQBe34_CS9SWGKqPniyiXejLTb10PQhWme2LYg/viewform',
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildPanelBase(
+                            'Fase Presencial (Aulas)',
+                            Icons.map,
+                            Column(
+                              children: [
+                                _buildHorarioTile(
+                                  'Lunes',
+                                  '3:00 PM – 5:00 PM',
+                                  'Salón 15C',
+                                  Colors.blueAccent,
+                                ),
+                                const SizedBox(height: 10),
+                                _buildHorarioTile(
+                                  'Viernes',
+                                  '1:00 PM – 3:00 PM',
+                                  'Salón 3C',
+                                  Colors.redAccent,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: _buildPanelBase(
+                            'Red de Enlaces Oficiales',
+                            Icons.link,
+                            Column(
+                              children: [
+                                _buildLinkButton(
+                                  context,
+                                  'Servidor de Discord',
+                                  Icons.discord,
+                                  const Color(0xFF5865F2),
+                                  url: 'https://discord.gg/DQVa6daUAU',
+                                ),
+                                _buildLinkButton(
+                                  context,
+                                  'Registro Oficial del Club',
+                                  Icons.how_to_reg,
+                                  Colors.teal,
+                                  url: 'https://forms.gle/c4ZRWLt6Tnc3s53z8',
+                                ),
+                                _buildLinkButton(
+                                  context,
+                                  'Préstamo de Inventario',
+                                  Icons.inventory,
+                                  Colors.orange,
+                                  url: 'https://docs.google.com/forms/d/e/1FAIpQLSeZovKraLqwgQBe34_CS9SWGKqPniyiXejLTb10PQhWme2LYg/viewform',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: _buildPanelBase(
-                      'Red de Enlaces Oficiales',
-                      Icons.link,
-                      Column(
-                        children: [
-                          _buildLinkButton(
-                            context,
-                            'Servidor de Discord',
-                            Icons.discord,
-                            const Color(0xFF5865F2),
-                            url: 'https://discord.gg/DQVa6daUAU',
-                          ),
-                          _buildLinkButton(
-                            context,
-                            'Registro Oficial del Club',
-                            Icons.how_to_reg,
-                            Colors.teal,
-                            url: 'https://forms.gle/c4ZRWLt6Tnc3s53z8',
-                          ),
-                          _buildLinkButton(
-                            context,
-                            'Préstamo de Inventario',
-                            Icons.inventory,
-                            Colors.orange,
-                            url: 'https://docs.google.com/forms/d/e/1FAIpQLSeZovKraLqwgQBe34_CS9SWGKqPniyiXejLTb10PQhWme2LYg/viewform',
-                          ),
-                          _buildLinkButton(
-                            context,
-                            'Realm de Minecraft (Inactivo)',
-                            Icons.landscape,
-                            Colors.grey,
-                            url: null,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 40),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.gavel, color: Colors.redAccent, size: 28),
-                  SizedBox(width: 15),
-                  Text(
-                    'Reglamento Oficial Operativo',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  Icon(
+                    Icons.gavel,
+                    color: Colors.redAccent,
+                    size: isMobile ? 24 : 28,
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Text(
+                      'Reglamento Oficial Operativo',
+                      style: TextStyle(
+                        fontSize: isMobile ? 20 : 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -918,12 +1028,14 @@ class _GuiaBienvenidaView extends StatelessWidget {
             children: [
               Icon(icon, color: Colors.deepPurpleAccent),
               const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -1009,7 +1121,6 @@ class _GuiaBienvenidaView extends StatelessWidget {
             if (await canLaunchUrl(uri)) {
               await launchUrl(uri);
             } else {
-              // Verificamos si la pantalla sigue activa antes de usar el context
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('No se pudo abrir el enlace: $url')),
@@ -1019,7 +1130,11 @@ class _GuiaBienvenidaView extends StatelessWidget {
           icon: Icon(icon, color: Colors.white, size: 18),
           label: Align(
             alignment: Alignment.centerLeft,
-            child: Text(label, style: const TextStyle(color: Colors.white)),
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: isInactive
@@ -1135,13 +1250,19 @@ class _AnimatedAcceptButtonState extends State<AnimatedAcceptButton>
             );
           },
           icon: const Icon(Icons.check_circle, size: 24),
-          label: const Text('He leído y acepto el Códice G-Zone'),
+          label: const Text(
+            'He leído y acepto el Códice',
+            textAlign: TextAlign.center,
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.deepPurpleAccent,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 15,
+            ), // Reducido para móvil
             textStyle: const TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
             shape: RoundedRectangleBorder(
@@ -1174,8 +1295,10 @@ class _ActividadPresencialView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isMobile ? 20 : 40),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 900),
@@ -1184,7 +1307,7 @@ class _ActividadPresencialView extends StatelessWidget {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(40),
+                padding: EdgeInsets.all(isMobile ? 25 : 40),
                 decoration: BoxDecoration(
                   color: Colors.grey[900]?.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
@@ -1200,22 +1323,26 @@ class _ActividadPresencialView extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(isMobile ? 15 : 20),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(icono, size: 70, color: color),
+                      child: Icon(
+                        icono,
+                        size: isMobile ? 50 : 70,
+                        color: color,
+                      ),
                     ),
-                    const SizedBox(width: 30),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             titulo,
-                            style: const TextStyle(
-                              fontSize: 36,
+                            style: TextStyle(
+                              fontSize: isMobile ? 26 : 36,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -1224,7 +1351,7 @@ class _ActividadPresencialView extends StatelessWidget {
                           Text(
                             subtitulo,
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: isMobile ? 15 : 18,
                               color: color,
                               fontStyle: FontStyle.italic,
                             ),
@@ -1236,12 +1363,10 @@ class _ActividadPresencialView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
+
+              // --- DESCRIPCIÓN Y ROSTER RESPONSIVO ---
+              isMobile
+                  ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
@@ -1261,68 +1386,91 @@ class _ActividadPresencialView extends StatelessWidget {
                             height: 1.6,
                           ),
                         ),
+                        const SizedBox(height: 30),
+                        _buildRosterBox(),
                       ],
-                    ),
-                  ),
-                  const SizedBox(width: 40),
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.all(25),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[850],
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.grey[700]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.local_play,
-                                color: Colors.amber,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Roster Principal',
+                              const Text(
+                                'Dinámica de la División',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
+                              const SizedBox(height: 15),
+                              Text(
+                                descripcion,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[400],
+                                  height: 1.6,
+                                ),
+                              ),
                             ],
                           ),
-                          const Divider(height: 30),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: juegosDestacados.map((juego) {
-                              return Chip(
-                                label: Text(
-                                  juego,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                backgroundColor: color.withValues(alpha: 0.2),
-                                side: BorderSide(
-                                  color: color.withValues(alpha: 0.5),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 40),
+                        Expanded(flex: 2, child: _buildRosterBox()),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRosterBox() {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey[700]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.local_play, color: Colors.amber, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'Roster Principal',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 30),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: juegosDestacados.map((juego) {
+              return Chip(
+                label: Text(
+                  juego,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                backgroundColor: color.withValues(alpha: 0.2),
+                side: BorderSide(color: color.withValues(alpha: 0.5)),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -1348,8 +1496,10 @@ class _ActividadVirtualView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 800;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isMobile ? 20 : 40),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 900),
@@ -1358,7 +1508,7 @@ class _ActividadVirtualView extends StatelessWidget {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(40),
+                padding: EdgeInsets.all(isMobile ? 25 : 40),
                 decoration: BoxDecoration(
                   color: Colors.grey[900]?.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
@@ -1374,22 +1524,26 @@ class _ActividadVirtualView extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(isMobile ? 15 : 20),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(icono, size: 70, color: color),
+                      child: Icon(
+                        icono,
+                        size: isMobile ? 50 : 70,
+                        color: color,
+                      ),
                     ),
-                    const SizedBox(width: 30),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             titulo,
-                            style: const TextStyle(
-                              fontSize: 36,
+                            style: TextStyle(
+                              fontSize: isMobile ? 26 : 36,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -1398,7 +1552,7 @@ class _ActividadVirtualView extends StatelessWidget {
                           Text(
                             subtitulo,
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: isMobile ? 15 : 18,
                               color: color,
                               fontStyle: FontStyle.italic,
                             ),
@@ -1410,12 +1564,10 @@ class _ActividadVirtualView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
+
+              // --- DESCRIPCIÓN Y MÓDULOS RESPONSIVOS ---
+              isMobile
+                  ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
@@ -1435,68 +1587,91 @@ class _ActividadVirtualView extends StatelessWidget {
                             height: 1.6,
                           ),
                         ),
+                        const SizedBox(height: 30),
+                        _buildModulesBox(),
                       ],
-                    ),
-                  ),
-                  const SizedBox(width: 40),
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.all(25),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[850],
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.grey[700]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.memory,
-                                color: Colors.tealAccent,
-                                size: 20,
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Módulos Activos',
+                              const Text(
+                                'Infraestructura Digital',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
+                              const SizedBox(height: 15),
+                              Text(
+                                descripcion,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[400],
+                                  height: 1.6,
+                                ),
+                              ),
                             ],
                           ),
-                          const Divider(height: 30),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: modulosDestacados.map((modulo) {
-                              return Chip(
-                                label: Text(
-                                  modulo,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                backgroundColor: color.withValues(alpha: 0.2),
-                                side: BorderSide(
-                                  color: color.withValues(alpha: 0.5),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 40),
+                        Expanded(flex: 2, child: _buildModulesBox()),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildModulesBox() {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey[700]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.memory, color: Colors.tealAccent, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'Módulos Activos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 30),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: modulosDestacados.map((modulo) {
+              return Chip(
+                label: Text(
+                  modulo,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                backgroundColor: color.withValues(alpha: 0.2),
+                side: BorderSide(color: color.withValues(alpha: 0.5)),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
